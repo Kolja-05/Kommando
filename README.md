@@ -4,9 +4,14 @@
 <return>   ::= "zurueck" <expr> ";"
 
 <expr>     ::= <int_lit>
-             | <int_lit> <arithmetic_operator> <int_lit>
+             | <int_lit> <arit_op> <int_lit>
 
 <int_lit>  ::= <digit> <int_lit>
              | <digit>
+<arit_op>  ::= "+"
+             | "-"
+             | "*"
+             | "/"
+
 
 
