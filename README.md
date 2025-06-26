@@ -14,4 +14,6 @@
              | "/"
 
 
+```
+My goal with the *Kommando* language is to achive Turing completeness. A programming language - or rather the formal system defined by that language - is Turing complete, if it can express any computable function. To achive this, a language only needs three thing: conditional execution. jumps and mutable variables. I want to implement these features step by step.
 
