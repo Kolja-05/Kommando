@@ -11,7 +11,11 @@
 enum class Tokentype {
     zurueck,
     int_lit,
-    semi
+    semi,
+    identifier,
+    label,
+    sei,
+    assign_op
 };
 
 struct Token {
@@ -37,16 +41,23 @@ public:
                 while (peek().has_value() && std::isalnum(peek().value())) {
                     buf.push_back(consume());
                 }
-                // check if it is a valid keyword
+                // check if it is a return-keyword
                 if (buf == "zurueck") { // TODO string comparison
                     tokens.push_back({.type = Tokentype::zurueck});
                     buf.clear();
                     continue;
                 }
+                else if (buf == "sei") {
+                    // check if its a sei-keyword
+                    tokens.push_back({.type = Tokentype::sei});
+                    buf.clear();
+                    continue;
+                    
+                }
                 else {
-                    std::cerr << "invalid keyword" << std::endl;
-                    std::cerr << buf << std::endl;
-                    exit(EXIT_FAILURE);
+                    tokens.push_back({.type = Tokentype::identifier});
+                    buf.clear();
+                    continue; ;
                 }
             }
             else if (std::isdigit(peek().value())) {
@@ -64,6 +75,12 @@ public:
                 tokens.push_back({.type = Tokentype::semi});
                 consume();
                 continue; // TODO maybe increment index
+            }
+            else if (peek().value() =='=') {
+                // if char is a = tokenize it
+                tokens.push_back({.type = Tokentype::assign_op});
+                consume();
+                continue;
             }
             else if (std::isspace(peek().value())) {
                 // if char is whitespace skip
@@ -83,12 +100,12 @@ public:
 
 private:
 
-    [[nodiscard]] std::optional<char> peek(int ahead = 1) const {
-        if (m_index + ahead > m_src.length()) {// TODO maybe >// TODO maybe >==
+    [[nodiscard]] std::optional<char> peek(int offset = 0) const {
+        if (m_index + offset >= m_src.length()) {// TODO maybe >// TODO maybe >==
             return {};
         }
         else {
-            return m_src.at(m_index);
+            return m_src.at(m_index + offset);
         }
     }
 

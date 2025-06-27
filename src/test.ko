@@ -1,1 +1,2 @@
-zurueck 7;
+sei x = 3;
+zurueck x;
