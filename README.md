@@ -1,5 +1,5 @@
 # Kommando
-*Kommando* is a Programming language that uses german keywords. The language is formaly defined by a grammar with the following production rules, where nonterminal symbols are written in square braces, terminal symbols written normally and $return$ is the starting symbol. All words, that can be derived by these production rules are valid syntax in the Kommando programming language. The grammar is contextfree, which means, that for each production rule the left side is a single nonterminal symbol and the right side a combination of nonterminal and terminal symbols. This property of the grammar makes it a lot easier to define a parser for a compiler.
+*Kommando* is a Programming language that uses german keywords. The language is formaly defined by a grammar with the following production rules, where nonterminal symbols are written in angle braces, terminal symbols written in double quotes and <programm> is the starting symbol. All words, that can be derived by these production rules are valid syntax in the *Kommando* programming language. The grammar is contextfree, which means, that for each production rule the left side is a single nonterminal symbol and the right side a combination of nonterminal and terminal symbols. This property of the grammar makes it a lot easier to define a parser for a compiler.
 ```bnf
 <program>    ::= "Kommando:" <stmt_list>
 
@@ -44,5 +44,5 @@
 <alpha_num>  ::= <letter> | <digit>
 
 ```
-My goal with the *Kommando* language is to achive Turing completeness. A programming language - or rather the formal system defined by that language - is Turing complete, if it can express any computable function. To achive this, a language only needs three things: conditional execution. jumps and mutable variables. I want to implement these features step by step.
+My goal with the *Kommando* language is to achive Turing completeness. A programming language - or rather the formal system defined by that language - is Turing complete, if it can express any computable function. To achive this, a language only needs three things: conditional execution, jumps and mutable variables. I want to implement these features step by step.
 
