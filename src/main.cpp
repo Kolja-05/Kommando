@@ -2,11 +2,15 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <system_error>
+#include <utility>
 #include <vector>
 #include "./tokenizer.hpp"
+#include "./parser.hpp"
+#include "./generator.hpp"
 
 
 
@@ -17,7 +21,7 @@ int main(int argc, char* argv[]) {
     // taking input
     if (argc != 2) {
         std::cerr << "incorrect usage!" << std::endl;
-        std::cerr << "correct usage: <input.lgk>" << std::endl;
+        std::cerr << "correct usage: <input.ko>" << std::endl;
         return EXIT_FAILURE;
     }
     // reading input file
@@ -33,21 +37,18 @@ int main(int argc, char* argv[]) {
     Tokenizer tokenizer(std::move(contents));
     std::vector<Token> tokens = tokenizer.tokenize();
 
-    for (int i=0; i<tokens.size(); i++) {
-        if (tokens.at(i).type == Tokentype::zurueck) std::cout << "zurueck ";
-        if (tokens.at(i).type == Tokentype::int_lit) std::cout << "0";
-        if (tokens.at(i).type == Tokentype::semi) std::cout << ";" << std::endl;
+    Parser parser(std::move(tokens));
+    std::optional<Node_return> tree = parser.parse();
+    if (!tree.has_value()) {
+        std::cerr << "error: unable to parse input, no zurueck statement" << std::endl;
+        return EXIT_FAILURE;
     }
-    std::stringstream output;
-    output << "global _start" << std::endl;
-    output << "_start:" << std::endl;
-    output << "mov rax, 60" << std::endl;
-    output << "mov rdi, 100" << std::endl;
-    output << "syscall" << std::endl;
+
+    Generator generator(tree.value());
 
     {
         std::fstream file("out.asm", std::ios::out);
-        file << output.str();
+        file << generator.generate();
     }
 
     system("nasm -felf64 out.asm");

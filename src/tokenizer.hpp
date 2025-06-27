@@ -101,6 +101,6 @@ private:
 
 
     const std::string m_src;
-    int m_index = 0;
+    size_t m_index = 0;
 
 };
