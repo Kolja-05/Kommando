@@ -60,8 +60,8 @@ struct Node_stmt {
 };
 
 struct Node_stmt_elem {
-    std::optional<Node_label> label;
     Node_stmt stmt;
+    std::optional<Node_label> label;
 };
 
 struct Node_stmt_list {
@@ -93,7 +93,7 @@ public:
             return Node_expr {.expr = Node_expr_int_lit{.int_lit = consume()}};
         }
         if (peek()->type == Tokentype::identifier) {
-            return Node_expr {.expr = Node_expr_ident {.ident = {consume()}}};
+            return Node_expr {.expr = Node_expr_ident {.ident = {consume()}}};//TODO maybe use parse_ident
         }
         return {};
     }
@@ -130,6 +130,7 @@ public:
     }
 
     std::optional<Node_ident> parse_ident() {
+        
         return {};
     }
 
@@ -156,7 +157,7 @@ public:
             std::cout << "error: expected expression" << std::endl;
             exit(EXIT_FAILURE);
         }
-        if (!peek().has_value() || peek().value().type != Tokentype::semi) {
+        if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
             std::cout << "error: expected ';" << std::endl;
             exit(EXIT_FAILURE);
         }
@@ -178,12 +179,69 @@ public:
             std::cout << "error: expected expression" << std::endl;
             exit(EXIT_FAILURE);
         }
-        if (!peek().has_value() || peek().value().type != Tokentype::semi) {
+        if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
             std::cout << "error: symbol ';'" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // ";"
         return Node_return {.expr = node_expr.value()};
+    }
+    std::optional<Node_stmt_elem> parse_stmt_elem() {
+        // <stmt_elem>  ::= <label> <stmt> | <stmt>
+        if (!peek().has_value()) {
+            return {};
+        }
+        if (peek().has_value() && peek().value().type == Tokentype::identifier && peek(1).has_value() && peek().value().type == Tokentype::colon) {
+            Token label_identifier = consume();
+            consume(); // ":"
+            auto node_stmt = parse_stmt();
+            if (!node_stmt) {
+                std::cout << "error: expected statement" << std::endl;
+            }
+            return Node_stmt_elem {.stmt = node_stmt.value(), .label = Node_label{.ident = Node_ident{.identifier = label_identifier}}};
+            //creates stmt and label as node_identifier with token label_identifier
+        }
+        auto node_stmt = parse_stmt();
+        if (!node_stmt) {
+            std::cout << "error: expected statement" << std::endl;
+        }
+        return Node_stmt_elem {.stmt = node_stmt.value()}; //TODO
+    }
+
+    std::unique_ptr<Node_stmt_list> parse_stmt_list() {
+        // <stmt_list>  ::= <stmt_elem> <stmt_list> | ε
+        if (!peek().has_value()) {
+            return {};
+        }
+        auto node_stmt_elem = parse_stmt_elem();
+        if (!node_stmt_elem) {
+            return {};
+        }
+        auto node_stmt_list = std::unique_ptr<Node_stmt_list>();
+        node_stmt_list->stmt_elem = node_stmt_elem.value();
+        node_stmt_list->next = parse_stmt_list();
+
+        return node_stmt_list;
+    }
+
+    std::optional<Node_programm> parse_programm() {
+        // <program>    ::= "Kommando:" <stmt_list>
+        if (!peek().has_value() || peek().value().type != Tokentype::kommando_entry){
+            std::cout << "error: invalid syntax, kommando needs to start with 'Kommando:" <<std::endl;
+            exit(EXIT_FAILURE);
+        }
+        consume(); // "Kommando""
+        if (!peek().has_value() || peek().value().type != Tokentype::colon) {
+            std::cout << "error: expected ':' after Kommando"<<std::endl;
+            exit(EXIT_FAILURE);
+        }
+        consume(); // ":"
+        auto node_stmt_list = parse_stmt_list();
+        if (!node_stmt_list) {
+            std::cout << "error: expected list of statements (list can be empty)" <<std::endl;
+            exit(EXIT_FAILURE);
+        }
+        return Node_programm {.stm_list = std::move(node_stmt_list)};
     }
 
 
@@ -203,6 +261,5 @@ private:
     }
 
     const std::vector<Token> m_tokens;
-    const std::string m_src;
     size_t m_index = 0;
 };

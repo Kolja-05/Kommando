@@ -11,11 +11,12 @@
 enum class Tokentype {
     zurueck,
     int_lit,
-    semi,
+    semicolon,
     identifier,
-    label,
     sei,
-    assign_op
+    assign_op,
+    kommando_entry,
+    colon
 };
 
 struct Token {
@@ -52,7 +53,11 @@ public:
                     tokens.push_back({.type = Tokentype::sei});
                     buf.clear();
                     continue;
-                    
+                }
+                else if (buf == "Kommando") {
+                    tokens.push_back({.type = Tokentype::kommando_entry});
+                    buf.clear();
+                    continue;
                 }
                 else {
                     tokens.push_back({.type = Tokentype::identifier});
@@ -72,9 +77,14 @@ public:
             }
             else if (peek().value() == ';') {
                 // if char is a ; tokenize it
-                tokens.push_back({.type = Tokentype::semi});
+                tokens.push_back({.type = Tokentype::semicolon});
                 consume();
                 continue; // TODO maybe increment index
+            }
+            else if (peek().value() == ':') {
+                tokens.push_back({.type = Tokentype::colon});
+                consume();
+                continue;
             }
             else if (peek().value() =='=') {
                 // if char is a = tokenize it
