@@ -1,2 +1,4 @@
+Kommando:
+
 sei x = 3;
-zurueck x;
+zurueck 4;

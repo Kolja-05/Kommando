@@ -9,10 +9,15 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/alloca.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/asm-generic/errno.h
+ /usr/include/c++/13/backward/auto_ptr.h
  /usr/include/c++/13/backward/binders.h
  /usr/include/c++/13/bit
+ /usr/include/c++/13/bits/align.h
  /usr/include/c++/13/bits/alloc_traits.h
+ /usr/include/c++/13/bits/allocated_ptr.h
  /usr/include/c++/13/bits/allocator.h
+ /usr/include/c++/13/bits/atomic_base.h
+ /usr/include/c++/13/bits/atomic_lockfree_defines.h
  /usr/include/c++/13/bits/basic_ios.h
  /usr/include/c++/13/bits/basic_ios.tcc
  /usr/include/c++/13/bits/basic_string.h
@@ -47,12 +52,16 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/c++/13/bits/new_allocator.h
  /usr/include/c++/13/bits/ostream.tcc
  /usr/include/c++/13/bits/ostream_insert.h
+ /usr/include/c++/13/bits/parse_numbers.h
  /usr/include/c++/13/bits/postypes.h
  /usr/include/c++/13/bits/predefined_ops.h
  /usr/include/c++/13/bits/ptr_traits.h
  /usr/include/c++/13/bits/range_access.h
  /usr/include/c++/13/bits/refwrap.h
  /usr/include/c++/13/bits/requires_hosted.h
+ /usr/include/c++/13/bits/shared_ptr.h
+ /usr/include/c++/13/bits/shared_ptr_atomic.h
+ /usr/include/c++/13/bits/shared_ptr_base.h
  /usr/include/c++/13/bits/sstream.tcc
  /usr/include/c++/13/bits/std_abs.h
  /usr/include/c++/13/bits/stl_algobase.h
@@ -63,13 +72,16 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/c++/13/bits/stl_iterator_base_funcs.h
  /usr/include/c++/13/bits/stl_iterator_base_types.h
  /usr/include/c++/13/bits/stl_pair.h
+ /usr/include/c++/13/bits/stl_raw_storage_iter.h
  /usr/include/c++/13/bits/stl_relops.h
+ /usr/include/c++/13/bits/stl_tempbuf.h
  /usr/include/c++/13/bits/stl_uninitialized.h
  /usr/include/c++/13/bits/stl_vector.h
  /usr/include/c++/13/bits/streambuf.tcc
  /usr/include/c++/13/bits/streambuf_iterator.h
  /usr/include/c++/13/bits/string_view.tcc
  /usr/include/c++/13/bits/stringfwd.h
+ /usr/include/c++/13/bits/unique_ptr.h
  /usr/include/c++/13/bits/uses_allocator.h
  /usr/include/c++/13/bits/uses_allocator_args.h
  /usr/include/c++/13/bits/utility.h
@@ -86,8 +98,10 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/c++/13/debug/assertions.h
  /usr/include/c++/13/debug/debug.h
  /usr/include/c++/13/exception
+ /usr/include/c++/13/ext/aligned_buffer.h
  /usr/include/c++/13/ext/alloc_traits.h
  /usr/include/c++/13/ext/atomicity.h
+ /usr/include/c++/13/ext/concurrence.h
  /usr/include/c++/13/ext/numeric_traits.h
  /usr/include/c++/13/ext/string_conversions.h
  /usr/include/c++/13/ext/type_traits.h
@@ -97,9 +111,12 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/c++/13/iosfwd
  /usr/include/c++/13/iostream
  /usr/include/c++/13/istream
+ /usr/include/c++/13/memory
  /usr/include/c++/13/new
  /usr/include/c++/13/optional
  /usr/include/c++/13/ostream
+ /usr/include/c++/13/pstl/execution_defs.h
+ /usr/include/c++/13/pstl/glue_memory_defs.h
  /usr/include/c++/13/pstl/pstl_config.h
  /usr/include/c++/13/sstream
  /usr/include/c++/13/stdexcept
@@ -111,6 +128,7 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/c++/13/type_traits
  /usr/include/c++/13/typeinfo
  /usr/include/c++/13/utility
+ /usr/include/c++/13/variant
  /usr/include/c++/13/vector
  /usr/include/ctype.h
  /usr/include/endian.h
@@ -124,6 +142,7 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/sched.h
  /usr/include/signal.h
  /usr/include/stdc-predef.h
+ /usr/include/stdint.h
  /usr/include/stdio.h
  /usr/include/stdlib.h
  /usr/include/time.h
@@ -167,6 +186,8 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/x86_64-linux-gnu/bits/sigthread.h
  /usr/include/x86_64-linux-gnu/bits/ss_flags.h
  /usr/include/x86_64-linux-gnu/bits/stdint-intn.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-least.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h
@@ -238,4 +259,5 @@ CMakeFiles/kommando.dir/src/main.cpp.o
  /usr/include/x86_64-linux-gnu/sys/ucontext.h
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
 

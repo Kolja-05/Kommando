@@ -60,7 +60,7 @@ public:
                     continue;
                 }
                 else {
-                    tokens.push_back({.type = Tokentype::identifier});
+                    tokens.push_back({.type = Tokentype::identifier, .value = buf});
                     buf.clear();
                     continue; ;
                 }

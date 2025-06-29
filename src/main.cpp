@@ -19,6 +19,7 @@
 
 int main(int argc, char* argv[]) {
     // taking input
+    // first argument is input second output file
     if (argc != 2) {
         std::cerr << "incorrect usage!" << std::endl;
         std::cerr << "correct usage: <input.ko>" << std::endl;
@@ -38,13 +39,13 @@ int main(int argc, char* argv[]) {
     std::vector<Token> tokens = tokenizer.tokenize();
 
     Parser parser(std::move(tokens));
-    std::optional<Node_return> tree = parser.parse();
-    if (!tree.has_value()) {
-        std::cerr << "error: unable to parse input, no zurueck statement" << std::endl;
+    std::optional<Node_program> progam_root = parser.parse_program();
+    if (!progam_root.has_value()) {
+        std::cerr << "error: unable to parse input" << std::endl;
         return EXIT_FAILURE;
     }
 
-    Generator generator(tree.value());
+    Generator generator(std::move(progam_root.value()));
 
     {
         std::fstream file("out.asm", std::ios::out);

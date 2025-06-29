@@ -1,14 +1,5 @@
 #pragma once
 
-
-
-
-
-
-
-
-
-
 #include "tokenizer.hpp"
 #include <cstdlib>
 #include <iostream>
@@ -69,7 +60,7 @@ struct Node_stmt_list {
     std::unique_ptr<Node_stmt_list> next; // pointer to next or Null if empty (epsilon)
 };
 
-struct Node_programm {
+struct Node_program {
     std::unique_ptr<Node_stmt_list> stm_list;
 };
 
@@ -78,9 +69,6 @@ public:
     inline explicit Parser(std::vector<Token> tokens)
         : m_tokens(std::move(tokens)) {
     }
-
-
-
 
     std::optional<Node_expr> parse_expr() {
         // <expr> ::= <int_lit>
@@ -93,7 +81,8 @@ public:
             return Node_expr {.expr = Node_expr_int_lit{.int_lit = consume()}};
         }
         if (peek()->type == Tokentype::identifier) {
-            return Node_expr {.expr = Node_expr_ident {.ident = {consume()}}};//TODO maybe use parse_ident
+            auto node_ident = parse_ident();
+            return Node_expr {.expr = Node_expr_ident{.ident = node_ident.value()}};
         }
         return {};
     }
@@ -130,8 +119,10 @@ public:
     }
 
     std::optional<Node_ident> parse_ident() {
-        
-        return {};
+        if (!peek().has_value() || peek().value().type != Tokentype::identifier) {
+            return {}; // error handling in parse assing
+        }
+        return Node_ident {.identifier = consume()};
     }
 
     std::optional<Node_assign> parse_assign() {
@@ -191,12 +182,13 @@ public:
         if (!peek().has_value()) {
             return {};
         }
-        if (peek().has_value() && peek().value().type == Tokentype::identifier && peek(1).has_value() && peek().value().type == Tokentype::colon) {
+        if (peek().has_value() && peek().value().type == Tokentype::identifier && peek(1).has_value() && peek(1).value().type == Tokentype::colon) {
             Token label_identifier = consume();
             consume(); // ":"
             auto node_stmt = parse_stmt();
             if (!node_stmt) {
                 std::cout << "error: expected statement" << std::endl;
+                exit(EXIT_FAILURE);
             }
             return Node_stmt_elem {.stmt = node_stmt.value(), .label = Node_label{.ident = Node_ident{.identifier = label_identifier}}};
             //creates stmt and label as node_identifier with token label_identifier
@@ -204,6 +196,7 @@ public:
         auto node_stmt = parse_stmt();
         if (!node_stmt) {
             std::cout << "error: expected statement" << std::endl;
+            exit(EXIT_FAILURE);
         }
         return Node_stmt_elem {.stmt = node_stmt.value()}; //TODO
     }
@@ -217,14 +210,14 @@ public:
         if (!node_stmt_elem) {
             return {};
         }
-        auto node_stmt_list = std::unique_ptr<Node_stmt_list>();
+        auto node_stmt_list = std::make_unique<Node_stmt_list>();
         node_stmt_list->stmt_elem = node_stmt_elem.value();
         node_stmt_list->next = parse_stmt_list();
 
         return node_stmt_list;
     }
 
-    std::optional<Node_programm> parse_programm() {
+    std::optional<Node_program> parse_program() {
         // <program>    ::= "Kommando:" <stmt_list>
         if (!peek().has_value() || peek().value().type != Tokentype::kommando_entry){
             std::cout << "error: invalid syntax, kommando needs to start with 'Kommando:" <<std::endl;
@@ -241,7 +234,7 @@ public:
             std::cout << "error: expected list of statements (list can be empty)" <<std::endl;
             exit(EXIT_FAILURE);
         }
-        return Node_programm {.stm_list = std::move(node_stmt_list)};
+        return Node_program {.stm_list = std::move(node_stmt_list)};
     }
 
 
