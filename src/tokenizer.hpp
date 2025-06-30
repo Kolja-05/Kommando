@@ -16,7 +16,8 @@ enum class Tokentype {
     sei,
     assign_op,
     kommando_entry,
-    colon
+    colon,
+    springe
 };
 
 struct Token {
@@ -56,6 +57,11 @@ public:
                 }
                 else if (buf == "Kommando") {
                     tokens.push_back({.type = Tokentype::kommando_entry});
+                    buf.clear();
+                    continue;
+                }
+                else if (buf == "springe") {
+                    tokens.push_back({.type = Tokentype::springe});
                     buf.clear();
                     continue;
                 }

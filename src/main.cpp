@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    Generator generator(std::move(progam_root.value()));
+    Generator generator(std::move(progam_root.value()), std::move(parser.get_defined_labels()));
 
     {
         std::fstream file("out.asm", std::ios::out);
