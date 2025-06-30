@@ -1,3 +1,0 @@
-/home/kolja/Documents/personal_projects/Kommando/build/CMakeFiles/kommando.dir
-/home/kolja/Documents/personal_projects/Kommando/build/CMakeFiles/edit_cache.dir
-/home/kolja/Documents/personal_projects/Kommando/build/CMakeFiles/rebuild_cache.dir
