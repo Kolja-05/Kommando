@@ -78,11 +78,6 @@ private:
         m_output << "mov rax, 60\n"; //we want to return syscallnumber for exit
         m_output << "syscall\n"; //syscall
     }
-    void gen_print(const Node_print& print_stmt ) {
-        // TODO
-        std::cout << "error: schreibe not yet implemented" << std::endl;
-        exit(EXIT_FAILURE);
-    }
     void gen_var_def_assign(const Node_var_def_assign& assign_stmt) {
         if (!assign_stmt.identifier.identifier.value.has_value()) {
             std::cout << "Invalid Identifier" <<std::endl;
@@ -149,10 +144,6 @@ private:
         if (std::holds_alternative<Node_goto>(stmt.stmt)) {
             const Node_goto& goto_stmt = std::get<Node_goto>(stmt.stmt);
             gen_goto(goto_stmt);
-        }
-        if (std::holds_alternative<Node_print>(stmt.stmt)) {
-            const Node_print& print_stmt = std::get<Node_print>(stmt.stmt);
-            gen_print(print_stmt);
         }
     }
     void gen_stmt_elem(const Node_stmt_elem& stmt_elem) {
