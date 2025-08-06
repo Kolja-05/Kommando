@@ -25,7 +25,6 @@ enum class Tokentype {
     kommando_entry,
     colon,
     springe,
-    schreibe,
     wenn,
     dann,
     ende,
@@ -76,10 +75,6 @@ public:
                 }
                 else if (buf == "springe") {
                     tokens.push_back({.type = Tokentype::springe});
-                    buf.clear();
-                    continue;
-                }else if (buf == "schreibe") {
-                    tokens.push_back({.type = Tokentype::schreibe});
                     buf.clear();
                     continue;
                 }else if (buf == "wenn") {

@@ -30,9 +30,6 @@ struct Node_expr {
 struct Node_return {
     Node_expr expr;
 };
-struct Node_print {
-    Node_expr expr;
-};
 
 struct Node_var_def_assign {
     Node_ident identifier;
@@ -61,7 +58,7 @@ struct Node_label {
 };
 
 struct Node_stmt {
-    std::variant<Node_return, Node_var_def_assign, Node_var_assign, Node_goto, Node_if, Node_print> stmt;
+    std::variant<Node_return, Node_var_def_assign, Node_var_assign, Node_goto, Node_if> stmt;
 };
 
 struct Node_stmt_elem {
@@ -163,14 +160,6 @@ private:
                 exit(EXIT_FAILURE);
             }
             return Node_stmt {.stmt = node_return.value()};
-        }
-        if (type == Tokentype::schreibe) {
-            auto Node_print = parse_print();
-            if (!Node_print) {
-                std::cout <<"error: expected schreibe" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-            return Node_stmt {.stmt = Node_print.value()};
         }
         if (type == Tokentype::sei) {
             auto node_var_def_assign = parse_var_def_assign();
@@ -308,24 +297,6 @@ private:
         }
         consume(); // ";"
         return Node_return {.expr = node_expr.value()};
-    }
-    std::optional<Node_print> parse_print() {
-        // <return> ::= "zurueck" <expr> ";"
-        if (!peek().has_value() || peek().value().type != Tokentype::schreibe) {
-            return {};
-        }
-        consume(); // "schreibe"
-        auto node_expr = parse_expr();
-        if (!node_expr) {
-            std::cout << "error: expected expression" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
-            std::cout << "error: symbol ';'" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        consume(); // ";"
-        return Node_print {.expr = node_expr.value()};
     }
     std::optional<Node_stmt_elem> parse_stmt_elem() {
         // <stmt_elem>  ::= <label> <stmt> | <stmt>
