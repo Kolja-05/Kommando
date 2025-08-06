@@ -38,7 +38,7 @@ public:
         m_output << "mov rsp, rbp\n"; // restore stack pointer
         m_output << "pop rbp\n";    // restore frame pointer from stack
         m_output << "mov rax, 60\n";
-        m_output << "mov rdi, 0 \n";
+        m_output << "mov rdi, 0\n";
         m_output << "syscall\n";
         return m_output.str();
     }
@@ -69,8 +69,7 @@ private:
                 std::cout << "error: invalid identifier" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            std::ptrdiff_t offset = get_stack_offset(ident.ident.identifier.value.value());
-            m_output << "mov rax, [rbp + " << offset << "]\n"; // load value of identifier into rax
+            load(ident.ident.identifier.value.value()); // load value of identifier into rax
         }
     }
     void gen_return(const Node_return& return_stmt) {
@@ -79,15 +78,36 @@ private:
         m_output << "mov rax, 60\n"; //we want to return syscallnumber for exit
         m_output << "syscall\n"; //syscall
     }
-    void gen_assign(const Node_assign& assign_stmt) {
-        //TODO
+    void gen_print(const Node_print& print_stmt ) {
+        // TODO
+        std::cout << "error: schreibe not yet implemented" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    void gen_var_def_assign(const Node_var_def_assign& assign_stmt) {
         if (!assign_stmt.identifier.identifier.value.has_value()) {
-        std::cout << "Invalid Identifier" <<std::endl;
+            std::cout << "Invalid Identifier" <<std::endl;
+            exit(EXIT_FAILURE);
         }
         std::string identifier = assign_stmt.identifier.identifier.value.value();
         gen_expr(assign_stmt.expr); //generates the expression and stores the value in rax
-        push(identifier); // pushes the value in rax onto the stack stores the identifier with its stack_offset in m_symbol_table and increments stack pointer
+        store(identifier); // pushes the value in rax onto the stack stores the identifier with its stack_offset in m_symbol_table and increments stack pointer
     }
+
+    void gen_var_assign(const Node_var_assign& assign_stmt) {
+        if (!assign_stmt.identifier.identifier.value.has_value()) {
+            std::cout << "Invalid Identifier" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        std::string identifier = assign_stmt.identifier.identifier.value.value();
+        gen_expr(assign_stmt.expr);
+        std::ptrdiff_t ident_stack_offset = get_stack_offset(identifier);
+        if (ident_stack_offset < 0) {
+            m_output << "mov QWORD [rbp" << ident_stack_offset << "], rax\n"; //move onto stack
+        } else {
+            m_output << "mov QWORD [rbp+" << ident_stack_offset << "], rax\n";
+        }
+    }
+
     void gen_if(const Node_if& if_stmt) {
         //TODO
     }
@@ -114,9 +134,13 @@ private:
             const Node_return& return_stmt = std::get<Node_return>(stmt.stmt);
             gen_return(return_stmt);
         }
-        if (std::holds_alternative<Node_assign>(stmt.stmt)) {
-            const Node_assign& assign_stmt = std::get<Node_assign>(stmt.stmt);
-            gen_assign(assign_stmt);
+        if (std::holds_alternative<Node_var_def_assign>(stmt.stmt)) {
+            const Node_var_def_assign& assign_stmt = std::get<Node_var_def_assign>(stmt.stmt);
+            gen_var_def_assign(assign_stmt);
+        }
+        if (std::holds_alternative<Node_var_assign>(stmt.stmt)) {
+            const Node_var_assign& assign_stmt = std::get<Node_var_assign>(stmt.stmt);
+            gen_var_assign((assign_stmt));
         }
         if (std::holds_alternative<Node_if>(stmt.stmt)) {
             const Node_if& if_stmt = std::get<Node_if>(stmt.stmt);
@@ -125,6 +149,10 @@ private:
         if (std::holds_alternative<Node_goto>(stmt.stmt)) {
             const Node_goto& goto_stmt = std::get<Node_goto>(stmt.stmt);
             gen_goto(goto_stmt);
+        }
+        if (std::holds_alternative<Node_print>(stmt.stmt)) {
+            const Node_print& print_stmt = std::get<Node_print>(stmt.stmt);
+            gen_print(print_stmt);
         }
     }
     void gen_stmt_elem(const Node_stmt_elem& stmt_elem) {
@@ -147,13 +175,31 @@ private:
 
     }
     // HELPER METHODS
-    void push(const std::string& identifier) {
-        // store identifier and stack offset in m_symbol_table and increment stack pointer
-        // the caller should provide a value to be pushed in the rax reg
-        m_output << "push rax\n"; //push onto stack
+
+
+    void store(const std::string& identifier) {
+        // store value of identifier and stack offset in m_symbol_table and increment stack offset
+        // the caller should provide a value to be stored in the rax register
         m_stack_offset -= 8; //adjust stack pointer (stack grows downwards)
-        m_symbol_table[identifier] = m_stack_offset; //store identifier and stack offset
+        std::ptrdiff_t offset = m_stack_offset;
+        m_symbol_table[identifier] = offset;
+        if (offset < 0) {
+            m_output << "mov QWORD [rbp" << offset << "], rax\n"; //move onto stack
+        } else {
+            m_output << "mov QWORD [rbp+" << offset << "], rax\n";
+        }
     }
+    void load(const std::string& identifier) {
+        // load value of identifier from stack frame into rax regiser
+        std::ptrdiff_t offset = get_stack_offset(identifier);
+        if (offset < 0) {
+            m_output << "mov rax, QWORD [rbp" << offset << "]\n";
+
+        } else {
+            m_output << "mov rax, QWORD [rbp+" << offset << "]\n";
+        }
+    }
+
 
     std::ptrdiff_t get_stack_offset(const std:: string& identifier) const {
         auto it = m_symbol_table.find(identifier);

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <cctype>
 #include <cstdlib>
 #include <optional>
@@ -15,9 +16,22 @@ enum class Tokentype {
     identifier,
     sei,
     assign_op,
+    comp_eq,
+    comp_neq,
+    comp_geq,
+    comp_leq,
+    comp_greater,
+    comp_less,
     kommando_entry,
     colon,
-    springe
+    springe,
+    schreibe,
+    wenn,
+    dann,
+    ende,
+    sonst,
+    wahr,
+    falsch
 };
 
 struct Token {
@@ -64,6 +78,31 @@ public:
                     tokens.push_back({.type = Tokentype::springe});
                     buf.clear();
                     continue;
+                }else if (buf == "schreibe") {
+                    tokens.push_back({.type = Tokentype::schreibe});
+                    buf.clear();
+                    continue;
+                }else if (buf == "wenn") {
+                    tokens.push_back({.type = Tokentype::wenn});
+                    buf.clear();
+                    continue;
+                }else if (buf == "dann") {
+                    tokens.push_back({.type = Tokentype::dann});
+                    buf.clear();
+                    continue;
+                }else if (buf == "ende") {
+                    tokens.push_back({.type = Tokentype::ende});
+                    buf.clear();
+                    continue;
+                }else if (buf == "sonst") {
+                    tokens.push_back({.type = Tokentype::sonst});
+                    buf.clear();
+                    continue;
+                }
+                else if (buf == "wahr") {
+                    tokens.push_back({.type = Tokentype::wahr});
+                    buf.clear();
+                    continue;
                 }
                 else {
                     tokens.push_back({.type = Tokentype::identifier, .value = buf});
@@ -93,9 +132,42 @@ public:
                 continue;
             }
             else if (peek().value() =='=') {
-                // if char is a = tokenize it
-                tokens.push_back({.type = Tokentype::assign_op});
-                consume();
+                if (peek(1).has_value() && peek(1).value() == '=') {
+                    tokens.push_back({.type = Tokentype::comp_eq});
+                    consume();// '='
+                    consume(); //'='
+                }
+                else {
+                    tokens.push_back({.type = Tokentype::assign_op});
+                    consume(); // '='
+                }
+                continue;
+            }
+            else if (peek().value() == '!' && peek(1).has_value() && peek(1).value() == '=') {
+                tokens.push_back({.type = Tokentype::comp_neq});
+                consume(); // '!'
+                consume(); // '='
+            }
+            else if (peek().value() == '<') {
+                if (peek(1).has_value() && peek(1).value() == '=') {
+                    tokens.push_back({.type = Tokentype::comp_leq});
+                    consume(); //'='
+                }
+                else {
+                    tokens.push_back({.type = Tokentype::comp_less});
+                    consume();
+                }
+                continue;
+            }
+            else if (peek().value() == '>') {
+                if (peek(1).has_value() && peek(1).value() == '=') {
+                    tokens.push_back({.type = Tokentype::comp_geq});
+                    consume(); //'='
+                }
+                else {
+                    tokens.push_back({.type = Tokentype::comp_greater});
+                    consume();
+                }
                 continue;
             }
             else if (std::isspace(peek().value())) {
@@ -104,7 +176,7 @@ public:
                 continue;
             }
             else {
-                std::cerr << "Invalid syntax!" << std::endl;
+                std::cerr << "Invalid Token!" << peek().value() << std::endl;
                 std::cerr << buf << std::endl;
                 exit(EXIT_FAILURE);
             }
@@ -135,5 +207,4 @@ private:
 
     const std::string m_src;
     size_t m_index = 0;
-
 };

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <set>
 #include <string>
 #include <variant>
@@ -23,15 +24,23 @@ struct Node_expr_ident {
 };
 
 struct Node_expr {
-    std::variant<Node_expr_int_lit, Node_expr_ident> expr; //TODO maybe rename to ident
+    std::variant<Node_expr_int_lit, Node_expr_ident> expr;
 };
 
 struct Node_return {
     Node_expr expr;
 };
+struct Node_print {
+    Node_expr expr;
+};
 
-struct Node_assign {
-    Node_ident identifier; //TODO maybe add extra node
+struct Node_var_def_assign {
+    Node_ident identifier;
+    Node_expr expr;
+};
+
+struct Node_var_assign {
+    Node_ident identifier;
     Node_expr expr;
 };
 
@@ -39,9 +48,12 @@ struct Node_goto {
     Node_ident target_ident;
 };
 
+struct Node_cond {
+    // TODO
+};
 struct Node_if {
     // TODO
-    // condition
+    Node_cond condition;
 };
 
 struct Node_label {
@@ -49,7 +61,7 @@ struct Node_label {
 };
 
 struct Node_stmt {
-    std::variant<Node_return, Node_assign, Node_goto, Node_if> stmt;
+    std::variant<Node_return, Node_var_def_assign, Node_var_assign, Node_goto, Node_if, Node_print> stmt;
 };
 
 struct Node_stmt_elem {
@@ -116,11 +128,9 @@ private:
         }
     }
 
-    
-
     // PARSING METHODS
     std::optional<Node_expr> parse_expr() {
-        // <expr> ::= <int_lit>
+        //<expr> ::= <int_lit>
         //          | <ident>
         // TODO     | <int_lit> <arit_op> <int_lit>
         if (!peek().has_value()) {
@@ -154,14 +164,29 @@ private:
             }
             return Node_stmt {.stmt = node_return.value()};
         }
-
-        if (type == Tokentype::sei) {
-            auto node_assign = parse_assign();
-            if (!node_assign) {
-                std::cout << "error: expected assign statement" << std::endl;
+        if (type == Tokentype::schreibe) {
+            auto Node_print = parse_print();
+            if (!Node_print) {
+                std::cout <<"error: expected schreibe" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            return Node_stmt {.stmt = node_assign.value()};
+            return Node_stmt {.stmt = Node_print.value()};
+        }
+        if (type == Tokentype::sei) {
+            auto node_var_def_assign = parse_var_def_assign();
+            if (!node_var_def_assign) {
+                std::cout << "error: expected variable definition" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            return Node_stmt {.stmt = node_var_def_assign.value()};
+        }
+        if (type == Tokentype::identifier) {
+            auto node_var_assign = parse_var_assign();
+            if (!node_var_assign) {
+                std::cout << "error expected variable assignment" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            return Node_stmt {.stmt = node_var_assign.value()};
         }
         if (type == Tokentype::springe) {
             auto Node_goto = parse_goto();
@@ -204,8 +229,8 @@ private:
         return Node_ident {.identifier = consume()};
     }
 
-    std::optional<Node_assign> parse_assign() {
-        // <assign>     ::= "sei" <var> "=" <expr> ";
+    std::optional<Node_var_def_assign> parse_var_def_assign() {
+        // <var_def_assign>     ::= "sei" <var> "=" <expr> ";
         if (!peek().has_value() || peek().value().type != Tokentype::sei) {
             return {};
         }
@@ -233,9 +258,37 @@ private:
         }
         consume(); // ";"
 
-        return Node_assign {.identifier = node_ident.value(), .expr = node_expr.value()};
+        return Node_var_def_assign {.identifier = node_ident.value(), .expr = node_expr.value()};
     }
 
+    std::optional<Node_var_assign> parse_var_assign() {
+        // <var_assign> ::= <var> "=" <expr> ";"
+        if (!peek().has_value() || peek().value().type != Tokentype::identifier) {
+            return {};
+        }
+        auto node_ident = parse_ident();
+        if (!node_ident) {
+            std::cout << "error: expected identifier" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (!peek().has_value() || peek().value().type != Tokentype::assign_op) {
+            std::cout << "error: expected '=' after identifier" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        consume(); // "="
+        auto node_expr = parse_expr();
+        if (!node_expr) {
+            std::cout << "error: expected expression" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
+            std::cout << "error: expected ';'" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        consume(); //";"
+        return  Node_var_assign{.identifier = node_ident.value(), .expr = node_expr.value()};
+        
+    }
 
 
     std::optional<Node_return> parse_return() {
@@ -256,17 +309,37 @@ private:
         consume(); // ";"
         return Node_return {.expr = node_expr.value()};
     }
+    std::optional<Node_print> parse_print() {
+        // <return> ::= "zurueck" <expr> ";"
+        if (!peek().has_value() || peek().value().type != Tokentype::schreibe) {
+            return {};
+        }
+        consume(); // "schreibe"
+        auto node_expr = parse_expr();
+        if (!node_expr) {
+            std::cout << "error: expected expression" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
+            std::cout << "error: symbol ';'" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        consume(); // ";"
+        return Node_print {.expr = node_expr.value()};
+    }
     std::optional<Node_stmt_elem> parse_stmt_elem() {
         // <stmt_elem>  ::= <label> <stmt> | <stmt>
         if (!peek().has_value()) {
             return {};
         }
-        if (peek().has_value() && peek().value().type == Tokentype::identifier && peek(1).has_value() && peek(1).value().type == Tokentype::colon) {
+        if (peek().has_value() && peek().value().type == Tokentype::identifier && peek(1).has_value() &&
+            peek(1).value().type == Tokentype::colon) {
             Token label_identifier = consume();
+
             consume(); // ":"
             auto node_stmt = parse_stmt();
             if (!node_stmt) {
-                std::cout << "error: expected statement 1" << std::endl;
+                std::cout << "error: expected statement and label" << std::endl;
                 exit(EXIT_FAILURE);
             }
             std::string label_str = label_identifier.value.value();
@@ -280,12 +353,15 @@ private:
         }
         auto node_stmt = parse_stmt();
         if (!node_stmt) {
-            std::cout << "error: expected statement 2" << std::endl;
+            std::cout << "error: expected statement" << std::endl;
             exit(EXIT_FAILURE);
         }
         return Node_stmt_elem {.stmt = node_stmt.value()}; //TODO
     }
-
+    std::optional<Node_cond> parse_condition() {
+        // TODO
+        return {};
+    }
     std::unique_ptr<Node_stmt_list> parse_stmt_list() {
         // <stmt_list>  ::= <stmt_elem> <stmt_list> | ε
         if (!peek().has_value()) {
@@ -301,5 +377,22 @@ private:
 
         return node_stmt_list;
     }
-
+    std::optional<Node_if> parse_if() {
+        if (!peek().has_value() || peek().value().type != Tokentype::wenn) {
+            return {};
+        }
+        consume(); // "wenn"
+        auto Node_cond = parse_condition(); // parse condition and consume the tokens
+        if (!peek().has_value() || peek().value().type != Tokentype::wenn) {
+            std::cout << "error: expected 'dann'" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        consume(); // "dann"
+        if (!peek().has_value() || peek().value().type != Tokentype::colon) {
+            std::cout << "error expected ':" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        consume(); // ":"
+        return Node_if {.condition = Node_cond.value()};
+    }
 };

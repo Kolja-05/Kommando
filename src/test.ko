@@ -1,7 +1,5 @@
 Kommando:
-sei x = 10;
-springe hier;
-sei y = 20;
-hier:
-sei z = 2;
-zurueck z;
+sei x = 100;
+x = 1;
+zurueck x;
+
