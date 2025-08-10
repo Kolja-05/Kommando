@@ -1,6 +1,6 @@
 # Kommando
 *Kommando* is a Programming language that uses german keywords. The language is formaly defined by a grammar. The compilation process takes three steps:
-1. The programmcode is turned into Tokens with a lexer, which instead of single letters containt the words of the source code.
+1. The programmcode is turned into tokens with a lexer, which instead of single letters contain the words of the source code.
 2. From the tokens we construct a abstract syntax tree (ASTS), a structure we can later follow to generete the assembly code.
 3. We travel the AST and for each node we generate the assembly code.
 4. The generated assembly code now only needs to be assembled, i.e. to to be translated into machinecode, the language, the computer can understand. For that, we use the NASM assambler and GNU linker.
