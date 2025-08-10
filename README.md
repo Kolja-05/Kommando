@@ -24,16 +24,16 @@ My goal with the *Kommando* language is to achive Turing completeness. A program
    ```bash
    git clone https://github.com/Kolja-05/Kommando.git
 
-2. compile the Programm with cmake
+2. Compile the Programm with cmake
    ```bash
    cmake -S . -B ./build/
    cmake --build ./build/
-3. compile your Kommando file
+3. Compile your Kommando file
    ```bash
    ./build/kommando example.ko
 4. run your compiled output
    ```bash
    ./out
-5. see the exit code of your programm
+5. See the exit code of your programm
    ```bash
    echo $?
