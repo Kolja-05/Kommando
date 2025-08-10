@@ -19,4 +19,19 @@ zurueck x;
 
 ```
 My goal with the *Kommando* language is to achive Turing completeness. A programming language - or rather the formal system defined by that language - is Turing complete, if it can express any computable function. To achive this, a language only needs three things: conditional execution, jumps and mutable variables. I want to implement these features step by step.
+## How to use?
+1. Clone the repository
+   ```bash
+   git clone https://github.com/Kolja-05/Kommando.git
+
+2. compile the Programm with cmake
+   ```bash
+   cmake -S . -B ./build/
+   cmake --build ./build/
+3. coupile your **Komando** file
+  ```bash
+   ./build/kommando ./src/example.ko
+
+
+
 
