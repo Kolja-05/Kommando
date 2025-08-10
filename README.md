@@ -28,10 +28,12 @@ My goal with the *Kommando* language is to achive Turing completeness. A program
    ```bash
    cmake -S . -B ./build/
    cmake --build ./build/
-3. coupile your **Komando** file
-  ```bash
-   ./build/kommando ./src/example.ko
-
-
-
-
+3. compile your Kommando file
+   ```bash
+   ./build/kommando example.ko
+4. run your compiled output
+   ```bash
+   ./out
+5. see the exit code of your programm
+   ```bash
+   echo $?
