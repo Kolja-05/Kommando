@@ -135,7 +135,6 @@ private:
         //TODO
     }
     void gen_goto(const Node_goto& goto_stmt) {
-        //TODO
         Node_ident target_ident = goto_stmt.target_ident;
         std::string target_ident_str = target_ident.identifier.value.value();
         if (m_defined_labels.find(target_ident_str) == m_defined_labels.end()) {
