@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <ostream>
 #include <set>
 #include <sstream>
@@ -46,7 +47,7 @@ public:
 
 
 private:
-    // MEMBER VARIALBE
+    // MEMBER VARIALBES
     const Node_program m_root;
     const std::set<std::string> m_defined_labels;
     std::unordered_map<std::string, std::ptrdiff_t> m_symbol_table;
@@ -56,45 +57,72 @@ private:
     //MEMBER METHODS
     //
     //CODE GENERATION
-    void gen_expr (const Node_expr& expr) {
-        if (std::holds_alternative<Node_expr_int_lit>(expr.expr)) {
+    void gen_expr (const Node_expr* expr) {
+        if (std::holds_alternative<std::unique_ptr<Node_expr_int_lit>>(expr->expr)) {
             // generate expr, store the value in rax
-            const Node_expr_int_lit int_lit = std::get<Node_expr_int_lit>(expr.expr);
-            m_output << "mov rax, " << int_lit.int_lit.value.value() << "\n";
+            const Node_expr_int_lit * int_lit = std::get<std::unique_ptr<Node_expr_int_lit>>(expr->expr).get();
+            m_output << "mov rax, " << int_lit->int_lit.value.value() << "\n";
         }
-        if (std::holds_alternative<Node_expr_ident>(expr.expr)) {
+        if (std::holds_alternative<std::unique_ptr<Node_expr_ident>>(expr->expr)) {
             // retrieve from stack
-            const Node_expr_ident ident = std::get<Node_expr_ident>(expr.expr);
-            if (!ident.ident.identifier.value.has_value()) {
-                std::cout << "error: invalid identifier" << std::endl;
+            const Node_expr_ident * ident = std::get<std::unique_ptr<Node_expr_ident>>(expr->expr).get();
+            if (!ident->ident.identifier.value.has_value()) {
+                std::cerr << "error: invalid identifier" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            load(ident.ident.identifier.value.value()); // load value of identifier into rax
+            load(ident->ident.identifier.value.value()); // load value of identifier into rax
+        }
+        // handle bin expr
+        if (std::holds_alternative<std::unique_ptr<Node_bin_expr>>(expr->expr)) {
+            const Node_bin_expr * bin_expr = std::get<std::unique_ptr<Node_bin_expr>>(expr->expr).get();
+            if (std::holds_alternative<std::unique_ptr<Node_bin_expr_add>>(bin_expr->bin_expr)){
+                const Node_bin_expr_add * add = std::get<std::unique_ptr<Node_bin_expr_add>>(bin_expr->bin_expr).get();
+                gen_expr(add->lhs.get()); // put lhs into rax
+                // handle lhs
+                m_output << "push rax\n"; //save lhs
+                // handle rhs
+                gen_expr(add->rhs.get()); // put rhs into rax
+                m_output << "pop rbx\n"; // put lhs into rbx
+                m_output << "add rax, rbx\n"; // add lhs onto rhs (add rbx, rax adds whats in rax onto rbx)
+            }
+            if (std::holds_alternative<std::unique_ptr<Node_bin_expr_multi>>(bin_expr->bin_expr)){
+                const Node_bin_expr_add * multi = std::get<std::unique_ptr<Node_bin_expr_add>>(bin_expr->bin_expr).get();
+                gen_expr(multi->lhs.get()); // put lhs into rax
+                // handle lhs
+                m_output << "push rax\n"; //save lhs
+                // handle rhs
+                gen_expr(multi->rhs.get()); // put rhs into rax
+                m_output << "pop rbx\n"; // put lhs into rbx
+                m_output << "imul rax, rbx\n"; // multi lhs with rhs (imul rbx, rax multiplies whats in rax with rbx and stores it in rbx)
+                const Node_bin_expr_multi * bin_expr_multi = std::get<std::unique_ptr<Node_bin_expr_multi>>(bin_expr->bin_expr).get();
+            }
         }
     }
+
+ 
     void gen_return(const Node_return& return_stmt) {
-        gen_expr(return_stmt.expr); //gen_expr generates the expression we want to return and loads it into rax
+        gen_expr(return_stmt.expr.get()); //gen_expr generates the expression we want to return and loads it into rax
         m_output << "mov rdi, rax\n"; //load exitcode into rdi
         m_output << "mov rax, 60\n"; //we want to return syscallnumber for exit
         m_output << "syscall\n"; //syscall
     }
     void gen_var_def_assign(const Node_var_def_assign& assign_stmt) {
         if (!assign_stmt.identifier.identifier.value.has_value()) {
-            std::cout << "Invalid Identifier" <<std::endl;
+            std::cerr << "Invalid Identifier" <<std::endl;
             exit(EXIT_FAILURE);
         }
         std::string identifier = assign_stmt.identifier.identifier.value.value();
-        gen_expr(assign_stmt.expr); //generates the expression and stores the value in rax
+        gen_expr(&assign_stmt.expr); //generates the expression and stores the value in rax
         store(identifier); // pushes the value in rax onto the stack stores the identifier with its stack_offset in m_symbol_table and increments stack pointer
     }
 
     void gen_var_assign(const Node_var_assign& assign_stmt) {
         if (!assign_stmt.identifier.identifier.value.has_value()) {
-            std::cout << "Invalid Identifier" << std::endl;
+            std::cerr << "Invalid Identifier" << std::endl;
             exit(EXIT_FAILURE);
         }
         std::string identifier = assign_stmt.identifier.identifier.value.value();
-        gen_expr(assign_stmt.expr);
+        gen_expr(&assign_stmt.expr);
         std::ptrdiff_t ident_stack_offset = get_stack_offset(identifier);
         if (ident_stack_offset < 0) {
             m_output << "mov QWORD [rbp" << ident_stack_offset << "], rax\n"; //move onto stack
@@ -111,7 +139,7 @@ private:
         Node_ident target_ident = goto_stmt.target_ident;
         std::string target_ident_str = target_ident.identifier.value.value();
         if (m_defined_labels.find(target_ident_str) == m_defined_labels.end()) {
-            std::cout << "error: call to undeclared identifier (label) " << target_ident_str << "'"<<std::endl;
+            std::cerr << "error: call to undeclared identifier (label) " << target_ident_str << "'"<<std::endl;
             exit(EXIT_FAILURE);
         }
         m_output << "jmp " << target_ident_str << "\n"; // jump to targen label
@@ -119,7 +147,7 @@ private:
     void gen_label(const Node_label& label) {
         const auto& label_str = label.ident.identifier;
         if (!label_str.value.has_value()){
-            std::cout << "Invalid identifier" <<std::endl;
+            std::cerr << "Invalid identifier" <<std::endl;
             exit(EXIT_FAILURE);
         }
         m_output << label_str.value.value() << ":\n";
@@ -147,7 +175,6 @@ private:
         }
     }
     void gen_stmt_elem(const Node_stmt_elem& stmt_elem) {
-        //TODO maybe add NULL check
         if (stmt_elem.label.has_value()) {
             //gen label
             gen_label(stmt_elem.label.value());
@@ -159,15 +186,13 @@ private:
         const Node_stmt_list* cur = stmt_list;
         //gen all statments in the list
         while (cur) {
-            Node_stmt_elem cur_stmt_elem = cur->stmt_elem;
+            const Node_stmt_elem& cur_stmt_elem = cur->stmt_elem;
             gen_stmt_elem(cur_stmt_elem);
-            cur = cur->next.get();
-        }
+            cur = cur->next.get(); }
 
     }
+
     // HELPER METHODS
-
-
     void store(const std::string& identifier) {
         // store value of identifier and stack offset in m_symbol_table and increment stack offset
         // the caller should provide a value to be stored in the rax register
@@ -191,11 +216,10 @@ private:
         }
     }
 
-
     std::ptrdiff_t get_stack_offset(const std:: string& identifier) const {
         auto it = m_symbol_table.find(identifier);
         if (it == m_symbol_table.end()) {
-            std::cout << "error: call to undeclared identifier '" << identifier << "'" <<std::endl;
+            std::cerr << "error: call to undeclared identifier '" << identifier << "'" <<std::endl;
             exit(EXIT_FAILURE);
         }
         return it->second;

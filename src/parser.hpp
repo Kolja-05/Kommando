@@ -23,12 +23,35 @@ struct Node_expr_ident {
     Node_ident ident;
 };
 
+struct Node_bin_expr;
+
 struct Node_expr {
-    std::variant<Node_expr_int_lit, Node_expr_ident> expr;
+    std::variant<
+        std::unique_ptr<Node_expr_int_lit>,
+        std::unique_ptr<Node_expr_ident>,
+        std::unique_ptr<Node_bin_expr>
+    > expr;
+};
+
+struct Node_bin_expr_add {
+    std::unique_ptr<Node_expr> lhs; // left handside
+    std::unique_ptr<Node_expr> rhs; // right handside
+};
+
+struct Node_bin_expr_multi {
+    std::unique_ptr<Node_expr> lhs; // left handside
+    std::unique_ptr<Node_expr> rhs; // right handside
+};
+
+struct Node_bin_expr {
+    std::variant<
+        std::unique_ptr<Node_bin_expr_add>,
+        std::unique_ptr<Node_bin_expr_multi> 
+    > bin_expr;
 };
 
 struct Node_return {
-    Node_expr expr;
+    std::unique_ptr<Node_expr> expr;
 };
 
 struct Node_var_def_assign {
@@ -58,7 +81,13 @@ struct Node_label {
 };
 
 struct Node_stmt {
-    std::variant<Node_return, Node_var_def_assign, Node_var_assign, Node_goto, Node_if> stmt;
+    std::variant<
+        Node_return,
+        Node_var_def_assign,
+        Node_var_assign,
+        Node_goto,
+        Node_if>
+    stmt;
 };
 
 struct Node_stmt_elem {
@@ -81,22 +110,21 @@ public:
         : m_tokens(std::move(tokens)) {
     }
 
-    
     std::optional<Node_program> parse_program() {
         // <program>    ::= "Kommando:" <stmt_list>
         if (!peek().has_value() || peek().value().type != Tokentype::kommando_entry){
-            std::cout << "error: invalid syntax, kommando needs to start with 'Kommando:" <<std::endl;
+            std::cerr << "error: invalid syntax, kommando needs to start with 'Kommando:" <<std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // "Kommando""
         if (!peek().has_value() || peek().value().type != Tokentype::colon) {
-            std::cout << "error: expected ':' after Kommando"<<std::endl;
+            std::cerr << "error: expected ':' after Kommando"<<std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // ":"
         auto node_stmt_list = parse_stmt_list();
         if (!node_stmt_list) {
-            std::cout << "error: expected list of statements (list can be empty)" <<std::endl;
+            std::cerr << "error: expected list of statements (list can be empty)" <<std::endl;
             exit(EXIT_FAILURE);
         }
         return Node_program {.stm_list = std::move(node_stmt_list)};
@@ -124,23 +152,80 @@ private:
             return m_tokens.at(m_index + offset);
         }
     }
+    
 
-    // PARSING METHODS
-    std::optional<Node_expr> parse_expr() {
-        //<expr> ::= <int_lit>
-        //          | <ident>
-        // TODO     | <int_lit> <arit_op> <int_lit>
+
+
+       // PARSING METHODS
+
+    
+    std::optional<std::unique_ptr<Node_expr>> parse_prim_expr() {
+        //Parses primary expressions like integer literals and identifiers
         if (!peek().has_value()) {
             return {};
         }
-        if (peek()->type == Tokentype::int_lit) {
-            return Node_expr {.expr = Node_expr_int_lit{.int_lit = consume()}};
+        if (peek().value().type == Tokentype::int_lit) {
+            auto expr = std::make_unique<Node_expr>();
+            auto int_lit =std::make_unique<Node_expr_int_lit>();
+            int_lit->int_lit = consume();
+            expr->expr = std::move(int_lit);
+            return expr;
         }
-        if (peek()->type == Tokentype::identifier) {
-            auto node_ident = parse_ident();
-            return Node_expr {.expr = Node_expr_ident{.ident = node_ident.value()}};
+        if (peek().value().type == Tokentype::identifier) {
+            auto expr = std::make_unique<Node_expr>();
+            auto ident = std::make_unique<Node_expr_ident>();
+            ident->ident.identifier = consume();
+            expr->expr = std::move(ident);
+            return expr;
         }
         return {};
+    }
+
+
+
+    std::optional<std::unique_ptr<Node_expr>> parse_bin_expr (std::unique_ptr<Node_expr> lhs) {
+        if (!peek().has_value()) {
+            if (lhs) {
+                return lhs;
+            }
+            else {
+                return {};
+            }
+        }
+        if (peek().value().type == Tokentype::plus) {
+            consume(); //"+"
+            auto rhs = parse_prim_expr();
+            if (!rhs.has_value()) {
+                std::cerr << "error: exprected expression after +" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            auto bin_expr_add = std::make_unique<Node_bin_expr_add>();
+            bin_expr_add->lhs = std::move(lhs);
+            bin_expr_add->rhs = std::move(rhs.value());
+
+            auto bin_expr = std::make_unique<Node_bin_expr>();
+            bin_expr->bin_expr = std::move(bin_expr_add);
+
+            auto expr = std::make_unique<Node_expr>();
+            expr->expr = std::move(bin_expr);
+            //handle chains like x + y +z
+            return parse_bin_expr(std::move(expr));
+        }
+        if (!lhs) {
+            return {};
+        }
+        return lhs;
+    }
+
+    std::optional<std::unique_ptr<Node_expr>> parse_expr() {
+        auto lhs = parse_prim_expr();
+        if (!lhs) {
+            return {};
+        }
+
+        auto expr = std::make_unique<Node_expr>();
+        expr = std::move(lhs.value());
+        return parse_bin_expr(std::move(expr));
     }
 
     std::optional<Node_stmt> parse_stmt() {
@@ -156,31 +241,31 @@ private:
         if (type == Tokentype::zurueck) {
             auto node_return = parse_return();
             if (!node_return) {
-                std::cout << "error invalid keyword" << std::endl;
+                std::cerr << "error invalid keyword" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            return Node_stmt {.stmt = node_return.value()};
+            return Node_stmt {.stmt = std::move(node_return.value())};
         }
         if (type == Tokentype::sei) {
             auto node_var_def_assign = parse_var_def_assign();
             if (!node_var_def_assign) {
-                std::cout << "error: expected variable definition" << std::endl;
+                std::cerr << "error: expected variable definition" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            return Node_stmt {.stmt = node_var_def_assign.value()};
+            return Node_stmt {.stmt = std::move(node_var_def_assign.value())};
         }
         if (type == Tokentype::identifier) {
             auto node_var_assign = parse_var_assign();
             if (!node_var_assign) {
-                std::cout << "error expected variable assignment" << std::endl;
+                std::cerr << "error expected variable assignment" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            return Node_stmt {.stmt = node_var_assign.value()};
+            return Node_stmt {.stmt = std::move(node_var_assign.value())};
         }
         if (type == Tokentype::springe) {
             auto Node_goto = parse_goto();
             if (!Node_goto) {
-                std::cout <<"error: expected jump" << std::endl;
+                std::cerr <<"error: expected jump" << std::endl;
                 exit(EXIT_FAILURE);
             }
             return Node_stmt {.stmt = Node_goto.value()};
@@ -189,14 +274,14 @@ private:
         //TODO add if
         return {};
     }
-    std::optional<Node_goto> parse_goto() {
+ std::optional<Node_goto> parse_goto() {
         //TODO
         if (!peek().has_value() || peek().value().type != Tokentype::springe) {
             return {};
         }
         consume(); // "springe"
         if (!peek().has_value() || peek()->type != Tokentype::identifier) {
-            std::cout << "error: expected identifier (label) after springe stamtement" << std::endl;
+            std::cerr << "error: expected identifier (label) after springe stamtement" << std::endl;
             exit(EXIT_FAILURE);
         }
         Token identifier = consume(); // <label>
@@ -205,7 +290,7 @@ private:
             exit(EXIT_FAILURE);
         }
         if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
-            std::cout << "error: expected ';'" << std::endl;
+            std::cerr << "error: expected ';'" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // ";"
@@ -227,27 +312,27 @@ private:
 
         auto node_ident = parse_ident();
         if (!node_ident) {
-            std::cout << "error: expected identifier after 'sei'" << std::endl;
+            std::cerr << "error: expected identifier after 'sei'" << std::endl;
             exit(EXIT_FAILURE);
         }
         if (!peek().has_value() || peek().value().type != Tokentype::assign_op) {
-            std::cout << "error: expected '=' after identifier" << std::endl;
+            std::cerr << "error: expected '=' after identifier" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // "="
 
         auto node_expr = parse_expr();
         if (!node_expr) {
-            std::cout << "error: expected expression" << std::endl;
+            std::cerr << "error: expected expression" << std::endl;
             exit(EXIT_FAILURE);
         }
         if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
-            std::cout << "error: expected ';" << std::endl;
+            std::cerr << "error: expected ';'" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // ";"
 
-        return Node_var_def_assign {.identifier = node_ident.value(), .expr = node_expr.value()};
+        return Node_var_def_assign {.identifier = node_ident.value(), .expr = std::move(*node_expr.value())};
     }
 
     std::optional<Node_var_assign> parse_var_assign() {
@@ -257,26 +342,25 @@ private:
         }
         auto node_ident = parse_ident();
         if (!node_ident) {
-            std::cout << "error: expected identifier" << std::endl;
+            std::cerr << "error: expected identifier" << std::endl;
             exit(EXIT_FAILURE);
         }
         if (!peek().has_value() || peek().value().type != Tokentype::assign_op) {
-            std::cout << "error: expected '=' after identifier" << std::endl;
+            std::cerr << "error: expected '=' after identifier" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // "="
         auto node_expr = parse_expr();
         if (!node_expr) {
-            std::cout << "error: expected expression" << std::endl;
+            std::cerr << "error: expected expression" << std::endl;
             exit(EXIT_FAILURE);
         }
         if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
-            std::cout << "error: expected ';'" << std::endl;
+            std::cerr << "error: expected ';'" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); //";"
-        return  Node_var_assign{.identifier = node_ident.value(), .expr = node_expr.value()};
-        
+        return  Node_var_assign{.identifier = node_ident.value(), .expr = std::move(*node_expr.value())};
     }
 
 
@@ -288,15 +372,15 @@ private:
         consume(); // "zurueck"
         auto node_expr = parse_expr();
         if (!node_expr) {
-            std::cout << "error: expected expression" << std::endl;
+            std::cerr << "error: expected expression" << std::endl;
             exit(EXIT_FAILURE);
         }
         if (!peek().has_value() || peek().value().type != Tokentype::semicolon) {
-            std::cout << "error: symbol ';'" << std::endl;
+            std::cerr << "error: symbol ';'" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // ";"
-        return Node_return {.expr = node_expr.value()};
+        return Node_return {.expr = std::move(node_expr.value())};
     }
     std::optional<Node_stmt_elem> parse_stmt_elem() {
         // <stmt_elem>  ::= <label> <stmt> | <stmt>
@@ -310,24 +394,24 @@ private:
             consume(); // ":"
             auto node_stmt = parse_stmt();
             if (!node_stmt) {
-                std::cout << "error: expected statement and label" << std::endl;
+                std::cerr << "error: expected statement and label" << std::endl;
                 exit(EXIT_FAILURE);
             }
             std::string label_str = label_identifier.value.value();
             if (m_defined_labels.find(label_str) != m_defined_labels.end()) {
-                std::cout << "error: redefinition of label '" << label_str << "'" <<std::endl;
+                std::cerr << "error: redefinition of label '" << label_str << "'" <<std::endl;
                 exit(EXIT_FAILURE);
             }
             m_defined_labels.insert(label_str);
-            return Node_stmt_elem {.stmt = node_stmt.value(), .label = Node_label{.ident = Node_ident{.identifier = label_identifier}}};
+            return Node_stmt_elem {.stmt = std::move(node_stmt.value()), .label = Node_label{.ident = Node_ident{.identifier = label_identifier}}};
             //creates stmt and label as node_identifier with token label_identifier
         }
         auto node_stmt = parse_stmt();
         if (!node_stmt) {
-            std::cout << "error: expected statement" << std::endl;
+            std::cerr << "error: expected statement" << std::endl;
             exit(EXIT_FAILURE);
         }
-        return Node_stmt_elem {.stmt = node_stmt.value()}; //TODO
+        return Node_stmt_elem {.stmt = std::move(node_stmt.value())}; //TODO
     }
     std::optional<Node_cond> parse_condition() {
         // TODO
@@ -343,7 +427,7 @@ private:
             return {};
         }
         auto node_stmt_list = std::make_unique<Node_stmt_list>();
-        node_stmt_list->stmt_elem = node_stmt_elem.value();
+        node_stmt_list->stmt_elem = std::move(node_stmt_elem.value());
         node_stmt_list->next = parse_stmt_list();
 
         return node_stmt_list;
@@ -355,12 +439,12 @@ private:
         consume(); // "wenn"
         auto Node_cond = parse_condition(); // parse condition and consume the tokens
         if (!peek().has_value() || peek().value().type != Tokentype::wenn) {
-            std::cout << "error: expected 'dann'" << std::endl;
+            std::cerr << "error: expected 'dann'" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // "dann"
         if (!peek().has_value() || peek().value().type != Tokentype::colon) {
-            std::cout << "error expected ':" << std::endl;
+            std::cerr << "error expected ':" << std::endl;
             exit(EXIT_FAILURE);
         }
         consume(); // ":"

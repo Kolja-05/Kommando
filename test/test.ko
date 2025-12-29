@@ -1,5 +1,3 @@
 Kommando:
-sei x = 100;
-x = 1;
+sei x = 100 + 3;
 zurueck x;
-

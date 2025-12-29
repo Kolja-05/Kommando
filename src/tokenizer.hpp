@@ -15,13 +15,13 @@ enum class Tokentype {
     semicolon,
     identifier,
     sei,
-    assign_op,
-    comp_eq,
-    comp_neq,
-    comp_geq,
-    comp_leq,
-    comp_greater,
-    comp_less,
+    assign_op,      // =
+    comp_eq,        // ==
+    comp_neq,       // !=
+    comp_geq,       // >=
+    comp_leq,       // <=
+    comp_greater,   // >
+    comp_less,      // <
     kommando_entry,
     colon,
     springe,
@@ -30,7 +30,12 @@ enum class Tokentype {
     ende,
     sonst,
     wahr,
-    falsch
+    falsch,
+    plus,
+    minus,
+    times,
+    division,
+    modulo,
 };
 
 struct Token {
@@ -57,7 +62,7 @@ public:
                     buf.push_back(consume());
                 }
                 // check if it is a return-keyword
-                if (buf == "zurueck") { // TODO string comparison
+                if (buf == "zurueck") {
                     tokens.push_back({.type = Tokentype::zurueck});
                     buf.clear();
                     continue;
@@ -119,7 +124,7 @@ public:
                 // if char is a ; tokenize it
                 tokens.push_back({.type = Tokentype::semicolon});
                 consume();
-                continue; // TODO maybe increment index
+                continue;
             }
             else if (peek().value() == ':') {
                 tokens.push_back({.type = Tokentype::colon});
@@ -165,6 +170,12 @@ public:
                 }
                 continue;
             }
+            else if (peek().value() == '+') {
+                tokens.push_back({.type = Tokentype::plus});
+                consume();
+                continue;
+            }
+            // TODO add other arithmetix operators
             else if (std::isspace(peek().value())) {
                 // if char is whitespace skip
                 consume();
@@ -176,7 +187,7 @@ public:
                 exit(EXIT_FAILURE);
             }
         }
-        // reset indx, incase we want to tokanize again
+        // reset index, incase we want to tokanize again
         m_index = 0;
         return tokens;
     }
@@ -184,7 +195,7 @@ public:
 private:
 
     [[nodiscard]] std::optional<char> peek(int offset = 0) const {
-        if (m_index + offset >= m_src.length()) {// TODO maybe >// TODO maybe >==
+        if (m_index + offset >= m_src.length()) {
             return {};
         }
         else {
@@ -193,12 +204,8 @@ private:
     }
 
     inline char consume() {
-        return m_src.at(m_index++);
+        return m_src.at(m_index++); // returns character at index and increments it afterwards
     }
-
-
-
-
 
     const std::string m_src;
     size_t m_index = 0;
