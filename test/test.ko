@@ -1,3 +1,5 @@
 Kommando:
 sei x = 100 + 3;
+sei y = 1;
+sei z = x + y;
 zurueck x;
