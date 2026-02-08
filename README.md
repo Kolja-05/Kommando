@@ -8,6 +8,17 @@
 Kommando:
 sei x = 4;
 sei y = 10;
+sei z = y + x;
+x = z + 42;
+zurueck x;
+
+```
+My goal with the *Kommando* language is to achive Turing completeness. A programming language - or rather the formal system defined by that language - is Turing complete, if it can express any computable function. To achive this, a language only needs three things: conditional execution, jumps and mutable variables. I want to implement these features step by step. I already implemented variably declaration and initializiation and assignment of another value and a jump (Springe) command to jump between lables. To make it Turingcomplete I only need Conditional execution i.e. if-statements (Wenn ... Dann).
+
+```Kommando
+Kommando:
+sei x = 4;
+sei y = 10;
 Schleife:
 Wenn x > 0 dann:
   x = x - 1;
@@ -18,7 +29,6 @@ Ende
 zurueck x;
 
 ```
-My goal with the *Kommando* language is to achive Turing completeness. A programming language - or rather the formal system defined by that language - is Turing complete, if it can express any computable function. To achive this, a language only needs three things: conditional execution, jumps and mutable variables. I want to implement these features step by step.
 ## How to use?
 1. Clone the repository
    ```bash
