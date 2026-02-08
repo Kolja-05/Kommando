@@ -13,7 +13,7 @@ x = z + 42;
 zurueck x;
 
 ```
-My goal with the *Kommando* language is to achive Turing completeness. A programming language - or rather the formal system defined by that language - is Turing complete, if it can express any computable function. To achive this, a language only needs three things: conditional execution, jumps and mutable variables. I want to implement these features step by step. I already implemented variably declaration and initializiation and assignment of another value and a jump (Springe) command to jump between lables. To make it Turingcomplete I only need Conditional execution i.e. if-statements (Wenn ... Dann).
+My goal with the *Kommando* language is to achive Turing completeness. A programming language - or rather the formal system defined by that language - is Turing complete, if it can express any computable function. To achive this, a language only needs three things: conditional execution, jumps and mutable variables. I want to implement these features step by step. I already implemented variabledefination and -mutation and a jump-statement (Springe) to jump between lables. To make it Turingcomplete I only need Conditional execution i.e. if-statements (Wenn ... Dann).
 
 ```Kommando
 Kommando:
